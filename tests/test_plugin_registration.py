@@ -12,7 +12,9 @@ from homeassistant_plugin import adapter as ha_adapter
 from homeassistant_plugin import tools as ha_tools
 
 TOOL_NAMES = ["ha_list_entities", "ha_get_state", "ha_list_services", "ha_call_service"]
-NEW_ENTRY_KWARGS = {"trusted_inbound", "display_tier", "shared_env_prefixes"}
+NEW_ENTRY_KWARGS = {
+    "trusted_inbound", "display_tier", "shared_env_prefixes", "parse_target_ref_fn",
+}
 
 
 class RecordingCtx:
@@ -83,6 +85,13 @@ class TestPlatformRegistration:
         entry = PlatformEntry(source="plugin", **ctx.platforms[0])
         assert entry.name == "homeassistant"
         assert entry.adapter_factory is ha_adapter.HomeAssistantAdapter
+
+    def test_target_parser_resolves_explicit_notify_target(self, ctx):
+        parser = ctx.platforms[0]["parse_target_ref_fn"]
+        assert parser("  mobile_app_my_phone  ") == ("mobile_app_my_phone", None)
+
+    def test_target_parser_rejects_blank_target(self, ctx):
+        assert ctx.platforms[0]["parse_target_ref_fn"]("  ") is None
 
     def test_new_entry_kwargs_passed_when_core_supports_them(self, monkeypatch):
         import gateway.platform_registry as reg
